@@ -1,0 +1,47 @@
+{
+    "name": "kenny1911/symfony-http-exception",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Kenny1911",
+            "email": "o-muzyka@mail.ru"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "psalm": "./tools/psalm/vendor/bin/psalm",
+        "phpunit": "phpunit",
+        "cs-fix": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix",
+        "cs-check": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer check",
+        "composer-require-checker": "./tools/composer-require-checker/vendor/bin/composer-require-checker check",
+        "composer-unused": "./tools/composer-unused/vendor/bin/composer-unused",
+        "checks": [
+            "@cs-check",
+            "@phpunit",
+            "@psalm --no-cache",
+            "@composer-require-checker",
+            "@composer-unused"
+        ]
+    },
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.0"
+    },
+
+    "autoload": {
+        "psr-4": {
+            "Kenny1911\\SymfonyHttpException\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kenny1911\\SymfonyHttpException\\Tests\\": "tests/"
+        }
+    }
+}
