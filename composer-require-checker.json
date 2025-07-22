@@ -1,0 +1,6 @@
+{
+  "symbol-whitelist" : [
+    "Symfony\\Contracts\\Translation\\TranslatorInterface",
+    "Symfony\\Component\\ExpressionLanguage\\ExpressionLanguage"
+  ]
+}
