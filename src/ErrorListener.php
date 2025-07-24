@@ -22,7 +22,6 @@ final class ErrorListener implements EventSubscriberInterface
         private readonly ?ExpressionLanguage $expressionLanguage = null,
     ) {}
 
-    #[\Override]
     public static function getSubscribedEvents(): array
     {
         return [
