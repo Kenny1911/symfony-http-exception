@@ -86,26 +86,4 @@ final class ErrorListener implements EventSubscriberInterface
             break;
         } while ($refClass = $refClass->getParentClass());
     }
-
-    private static function decorateTranslator(TranslatorInterface $translator, ?string $defaultDomain): TranslatorInterface
-    {
-        return new class ($translator, $defaultDomain) implements TranslatorInterface {
-            public function __construct(
-                private readonly TranslatorInterface $translator,
-                private readonly ?string $defaultDomain,
-            ) {}
-
-            #[\Override]
-            public function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
-            {
-                return $this->translator->trans($id, $parameters, $domain ?? $this->defaultDomain, $locale);
-            }
-
-            #[\Override]
-            public function getLocale(): string
-            {
-                return $this->translator->getLocale();
-            }
-        };
-    }
 }
