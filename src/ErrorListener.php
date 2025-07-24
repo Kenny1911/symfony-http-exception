@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kenny1911\SymfonyHttpException;
 
 use Kenny1911\SymfonyHttpException\Attribute\BaseHttpException;
+use Kenny1911\SymfonyHttpException\Translation\TranslatorDecorator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;

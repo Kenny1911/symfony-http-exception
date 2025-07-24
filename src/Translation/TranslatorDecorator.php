@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kenny1911\SymfonyHttpException;
+namespace Kenny1911\SymfonyHttpException\Translation;
 
 use Symfony\Contracts\Translation\TranslatorInterface;
 
