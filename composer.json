@@ -1,5 +1,7 @@
 {
     "name": "kenny1911/symfony-http-exception",
+    "description": "The library provides a convenient way to convert PHP exceptions into Symfony HTTP exceptions with support for status codes, messages, headers, and translation capabilities.",
+    "keywords": ["symfony", "http", "exception", "convert", "message", "status", "code"],
     "type": "library",
     "license": "MIT",
     "authors": [
