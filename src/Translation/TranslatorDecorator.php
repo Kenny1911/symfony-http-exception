@@ -17,13 +17,11 @@ final class TranslatorDecorator implements TranslatorInterface
         private readonly ?string $defaultDomain,
     ) {}
 
-    #[\Override]
     public function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
     {
         return $this->translator->trans($id, $parameters, $domain ?? $this->defaultDomain, $locale);
     }
 
-    #[\Override]
     public function getLocale(): string
     {
         return $this->translator->getLocale();
