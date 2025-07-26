@@ -16,82 +16,90 @@ The `kenny1911/symfony-http-exception` library provides a convenient way to conv
 
 Install via Composer:
 
-```bash  
-composer require kenny1911/symfony-http-exception  
-```  
+```bash
+composer require kenny1911/symfony-http-exception
+```
 
 Register the event subscriber in your Symfony configuration:
 
-```yaml  
-# config/services.yaml  
-services:  
-    Kenny1911\SymfonyHttpException\ErrorListener:  
-        arguments:  
-          - '@translator'  
-          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }  
-        tags:  
-            - { name: kernel.event_subscriber }  
-```  
+```yaml
+# config/services.yaml
+services:
+    Kenny1911\SymfonyHttpException\ErrorListener:
+        arguments:
+          - '@translator'
+          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }
+        tags:
+            - { name: kernel.event_subscriber }
+```
+
+> Arguments `$translator` and `$expressionLanguage` is not required
 
 ## Usage
 
 ### Basic Example
 
-```php  
-use Kenny1911\SymfonyHttpException\Attribute\HttpException;  
-use Symfony\Component\HttpFoundation\Response;  
+```php
+use Kenny1911\SymfonyHttpException\Attribute\HttpException;
+use Symfony\Component\HttpFoundation\Response;
 
-#[HttpException(statusCode: Response::HTTP_FORBIDDEN)]  
-final class UserIsBlockedException extends Exception {}  
-```  
+#[HttpException(statusCode: Response::HTTP_FORBIDDEN)]
+final class UserIsBlockedException extends Exception {}
+```
 
 ### Advanced Example
 
-```php  
-use Kenny1911\SymfonyHttpException\Attribute\HttpException;  
-use Symfony\Component\HttpFoundation\Response;  
+```php
+use Kenny1911\SymfonyHttpException\Attribute\HttpException;
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
+use Symfony\Component\HttpFoundation\Response;
 
-#[HttpException(  
-    statusCode: Response::HTTP_FORBIDDEN,  
-    message: 'User { username } is blocked. Reason: { reason }.',  
-    translationParameters: [  
-        '{ username }' => 'e.username',  
-        '{ reason }' => 'translator.trans(e.reason)',  
-    ],  
-    translationDomain: 'message',  
-    headers: ['X-Error-Code' => '1024'],  
-)]  
-final class UserIsBlockedException extends Exception  
-{  
-    public function __construct(  
-        public readonly string $username,  
-        public readonly string $reason,  
-    ) {}  
-}  
-```  
+#[HttpException(
+    statusCode: Response::HTTP_FORBIDDEN,
+    message: 'User { username } is blocked. Error code: { error_code }. Reason: { reason }.',
+    parameters: [
+        '{ error_code }' => '1234',
+        '{ username }' => new Expression('e.username'),
+        '{ reason }' => new Expression('translator.trans(e.reason)'),
+    ],
+    translationDomain: 'message',
+    headers: [
+        'X-Error-Code' => '1024',
+        'X-Username' => new Expression('e.username'),
+        'X-Reason' => new Expression('translator.trans(e.reason)'),
+    ],
+)]
+final class UserIsBlockedException extends Exception
+{
+    public function __construct(
+        public readonly string $username,
+        public readonly string $reason,
+    ) {}
+}
+```
 
 ### Built-in Aliases
 
-```php  
-use Kenny1911\SymfonyHttpException\Attribute\AccessDeniedHttpException;  
+```php
+use Kenny1911\SymfonyHttpException\Attribute\AccessDeniedHttpException;
 
-#[AccessDeniedHttpException]  
-final class UserIsBlockedException extends Exception {}  
-```  
+#[AccessDeniedHttpException]
+final class UserIsBlockedException extends Exception {}
+```
 
-```php  
-use Kenny1911\SymfonyHttpException\Attribute\NotFoundHttpException;  
+```php
+use Kenny1911\SymfonyHttpException\Attribute\NotFoundHttpException;
 
-#[NotFoundHttpException]  
-final class UserNotFoundException extends Exception {}  
-```  
+#[NotFoundHttpException]
+final class UserNotFoundException extends Exception {}
+```
 
-```php  
-use Kenny1911\SymfonyHttpException\Attribute\BadRequestHttpException;  
+```php
+use Kenny1911\SymfonyHttpException\Attribute\BadRequestHttpException;
 
-#[BadRequestHttpException]  
-final class InvalidUsernameException extends Exception {}  
-```  
+#[BadRequestHttpException]
+final class InvalidUsernameException extends Exception {}
+```
 
 ## License
 

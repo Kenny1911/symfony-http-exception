@@ -34,6 +34,8 @@ services:
             - { name: kernel.event_subscriber }
 ```
 
+> Аргументы `$translator` и `$expressionLanguage` не обязательны
+
 ## Использование
 
 ### Минимальный пример
@@ -50,17 +52,23 @@ final class UserIsBlockedException extends Exception {}
 
 ```php
 use Kenny1911\SymfonyHttpException\Attribute\HttpException;
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Response;
 
 #[HttpException(
     statusCode: Response::HTTP_FORBIDDEN,
-    message: 'User { username } is blocked. Reason: { reason }.',
-    translationParameters: [
-        '{ username }' => 'e.username',
-        '{ reason }' => 'translator.trans(e.reason)',
+    message: 'User { username } is blocked. Error code: { error_code }. Reason: { reason }.',
+    parameters: [
+        '{ error_code }' => '1234',
+        '{ username }' => new Expression('e.username'),
+        '{ reason }' => new Expression('translator.trans(e.reason)'),
     ],
     translationDomain: 'message',
-    headers: ['X-Error-Code' => '1024'],
+    headers: [
+        'X-Error-Code' => '1024',
+        'X-Username' => new Expression('e.username'),
+        'X-Reason' => new Expression('translator.trans(e.reason)'),
+    ],
 )]
 final class UserIsBlockedException extends Exception
 {
