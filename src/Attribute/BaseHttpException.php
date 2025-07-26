@@ -18,7 +18,7 @@ abstract class BaseHttpException
         public int $statusCode,
         public ?string $message = null,
         public array $translationParameters = [],
-        public ?string $translationDomain = 'http_message',
+        public string $translationDomain = 'http_message',
         public array $headers = [],
     ) {}
 }

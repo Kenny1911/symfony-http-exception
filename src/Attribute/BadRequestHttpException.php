@@ -19,7 +19,7 @@ final class BadRequestHttpException extends BaseHttpException
     public function __construct(
         ?string $message = null,
         array $translationParameters = [],
-        ?string $translationDomain = 'http_message',
+        string $translationDomain = 'http_message',
         array $headers = [],
     ) {
         parent::__construct(Response::HTTP_BAD_REQUEST, $message, $translationParameters, $translationDomain, $headers);
