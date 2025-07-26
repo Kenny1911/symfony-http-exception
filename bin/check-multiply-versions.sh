@@ -12,3 +12,10 @@ for symfony_version in '^5.4' '^6.0' '^7.0'; do
     --with "symfony/expression-language:${symfony_version}" &&
   composer run checks || exit $?
 done
+
+for translation_version in '^2.3' '^3.0'; do
+  composer install &&
+  composer update --with-all-dependencies \
+    --with "symfony/translation-contracts:${translation_version}" &&
+  composer run checks || exit $?
+done
