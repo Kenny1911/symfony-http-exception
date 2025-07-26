@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kenny1911\SymfonyHttpException\Attribute;
 
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -13,8 +14,8 @@ use Symfony\Component\HttpFoundation\Response;
 final class AccessDeniedHttpException extends BaseHttpException
 {
     /**
-     * @param array<non-empty-string, non-empty-string> $translationParameters
-     * @param array<non-empty-string, non-empty-string> $headers
+     * @param array<non-empty-string, non-empty-string|Expression> $translationParameters
+     * @param array<non-empty-string, non-empty-string|Expression> $headers
      */
     public function __construct(
         ?string $message = null,
