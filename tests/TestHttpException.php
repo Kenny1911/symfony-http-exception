@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kenny1911\SymfonyHttpException\Tests;
 
 use Kenny1911\SymfonyHttpException\Attribute\HttpException;
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -13,22 +14,27 @@ use Symfony\Component\HttpFoundation\Response;
  */
 #[HttpException(
     statusCode: Response::HTTP_NOT_FOUND,
-    message: 'Some message with simple param = "{ simple_param }" and translated param = "{ translated_param }"',
-    translationParameters: [
-        '{ simple_param }' => 'e.simpleParam()',
-        '{ translated_param }' => 'translator.trans(e.translatedParam())',
+    message: 'Some message with static param = "{ static_param }", expression param = "{ expression_param }" and translated expression param = "{ translated_expression_param }"',
+    parameters: [
+        '{ static_param }' => 'Static',
+        '{ expression_param }' => new Expression('e.expressionParam()'),
+        '{ translated_expression_param }' => new Expression('translator.trans(e.translatedExpressionParam())'),
     ],
     translationDomain: 'test',
-    headers: ['X-Foo' => 'foo'],
+    headers: [
+        'X-Static' => 'Static',
+        'X-Expression' => new Expression('e.expressionParam()'),
+        'X-Translated-Expression' => new Expression('translator.trans(e.translatedExpressionParam())'),
+    ],
 )]
 final class TestHttpException extends \Exception
 {
-    public function simpleParam(): int
+    public function expressionParam(): int
     {
         return 34;
     }
 
-    public function translatedParam(): string
+    public function translatedExpressionParam(): string
     {
         return 'orig value';
     }

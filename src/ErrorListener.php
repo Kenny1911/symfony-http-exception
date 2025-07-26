@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Kenny1911\SymfonyHttpException;
 
 use Kenny1911\SymfonyHttpException\Attribute\BaseHttpException;
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
+use Kenny1911\SymfonyHttpException\Translation\SimpleTranslator;
+use Kenny1911\SymfonyHttpException\Translation\TranslatorDecorator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 use Symfony\Component\HttpKernel\Event\ExceptionEvent;
@@ -18,11 +21,10 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final class ErrorListener implements EventSubscriberInterface
 {
     public function __construct(
-        private readonly ?TranslatorInterface $translator = null,
+        private readonly TranslatorInterface $translator = new SimpleTranslator(),
         private readonly ?ExpressionLanguage $expressionLanguage = null,
     ) {}
 
-    #[\Override]
     public static function getSubscribedEvents(): array
     {
         return [
@@ -52,34 +54,18 @@ final class ErrorListener implements EventSubscriberInterface
 
             /** @var BaseHttpException $httpException */
             $httpException = $attribute->newInstance();
-            $message = $httpException->message ?? $throwable->getMessage();
 
-            if (null !== $this->translator) {
-                if (null !== $this->expressionLanguage) {
-                    $parameters = array_map(
-                        fn(string $expr): string => (string) $this->expressionLanguage?->evaluate(
-                            expression: $expr,
-                            values: [
-                                'e' => $throwable,
-                                'translator' => null !== $this->translator
-                                    ? new TranslatorDecorator($this->translator, $httpException->translationDomain)
-                                    : null,
-                            ],
-                        ),
-                        $httpException->translationParameters,
-                    );
-                } else {
-                    $parameters = [];
-                }
+            $translator = new TranslatorDecorator($this->translator, $httpException->translationDomain);
 
-                $message = $this->translator->trans($message, $parameters, $httpException->translationDomain);
-            }
+            $parameters = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->parameters);
+            $message = $translator->trans($httpException->message ?? $throwable->getMessage(), $parameters, $httpException->translationDomain);
+            $headers = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->headers);
 
             $event->setThrowable(new HttpException(
                 statusCode: $httpException->statusCode,
                 message: $message,
                 previous: $throwable,
-                headers: $httpException->headers,
+                headers: $headers,
                 code: (int) $throwable->getCode(),
             ));
 
@@ -87,25 +73,18 @@ final class ErrorListener implements EventSubscriberInterface
         } while ($refClass = $refClass->getParentClass());
     }
 
-    private static function decorateTranslator(TranslatorInterface $translator, ?string $defaultDomain): TranslatorInterface
+    private function exec(string|Expression $expression, \Throwable $throwable, TranslatorInterface $translator): string
     {
-        return new class ($translator, $defaultDomain) implements TranslatorInterface {
-            public function __construct(
-                private readonly TranslatorInterface $translator,
-                private readonly ?string $defaultDomain,
-            ) {}
+        if ($expression instanceof Expression && null !== $this->expressionLanguage) {
+            return (string) $this->expressionLanguage->evaluate(
+                expression: (string) $expression,
+                values: [
+                    'e' => $throwable,
+                    'translator' => $translator,
+                ],
+            );
+        }
 
-            #[\Override]
-            public function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
-            {
-                return $this->translator->trans($id, $parameters, $domain ?? $this->defaultDomain, $locale);
-            }
-
-            #[\Override]
-            public function getLocale(): string
-            {
-                return $this->translator->getLocale();
-            }
-        };
+        return (string) $expression;
     }
 }

@@ -24,25 +24,49 @@ final class ErrorListenerTest extends TestCase
         new TestHttpException('Orig message'),
         true,
         true,
-        'Trans(test): Some message with simple param = "34" and translated param = "Trans(test): orig value"',
+        'Trans(test): Some message with static param = "Static", expression param = "34" and translated expression param = "Trans(test): orig value"',
         404,
-        ['X-Foo' => 'foo'],
+        [
+            'X-Static' => 'Static',
+            'X-Expression' => '34',
+            'X-Translated-Expression' => 'Trans(test): orig value',
+        ],
     ])]
     #[TestWith([
         new TestHttpException('Orig message'),
         true,
         false,
-        'Trans(test): Some message with simple param = "{ simple_param }" and translated param = "{ translated_param }"',
+        'Trans(test): Some message with static param = "Static", expression param = "e.expressionParam()" and translated expression param = "translator.trans(e.translatedExpressionParam())"',
         404,
-        ['X-Foo' => 'foo'],
+        [
+            'X-Static' => 'Static',
+            'X-Expression' => 'e.expressionParam()',
+            'X-Translated-Expression' => 'translator.trans(e.translatedExpressionParam())',
+        ],
+    ])]
+    #[TestWith([
+        new TestHttpException('Orig message'),
+        false,
+        true,
+        'Some message with static param = "Static", expression param = "34" and translated expression param = "orig value"',
+        404,
+        [
+            'X-Static' => 'Static',
+            'X-Expression' => '34',
+            'X-Translated-Expression' => 'orig value',
+        ],
     ])]
     #[TestWith([
         new TestHttpException('Orig message'),
         false,
         false,
-        'Some message with simple param = "{ simple_param }" and translated param = "{ translated_param }"',
+        'Some message with static param = "Static", expression param = "e.expressionParam()" and translated expression param = "translator.trans(e.translatedExpressionParam())"',
         404,
-        ['X-Foo' => 'foo'],
+        [
+            'X-Static' => 'Static',
+            'X-Expression' => 'e.expressionParam()',
+            'X-Translated-Expression' => 'translator.trans(e.translatedExpressionParam())',
+        ],
     ])]
     #[TestWith([
         new TestHttpExceptionWithoutParams('Orig message'),
@@ -92,8 +116,14 @@ final class ErrorListenerTest extends TestCase
         int $expectedStatusCode,
         array $expectedHeaders,
     ): void {
+        /** @var TranslatorInterface $defaultTranslator */
+        $defaultTranslator = (new \ReflectionClass(ErrorListener::class))
+            ->getConstructor()
+            ?->getParameters()[0]
+            ?->getDefaultValue();
+
         $listener = new ErrorListener(
-            translator: $supportTranslation ? self::createTranslator() : null,
+            translator: $supportTranslation ? self::createTranslator() : $defaultTranslator,
             expressionLanguage: $supportExpressionLanguage ? new ExpressionLanguage() : null,
         );
 
@@ -111,13 +141,11 @@ final class ErrorListenerTest extends TestCase
     private static function createTranslator(): TranslatorInterface
     {
         return new class implements TranslatorInterface {
-            #[\Override]
             public function trans(string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
             {
                 return \sprintf('Trans(%s): %s', (string) $domain, strtr($id, $parameters));
             }
 
-            #[\Override]
             public function getLocale(): string
             {
                 return '';
