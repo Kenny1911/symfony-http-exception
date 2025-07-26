@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 #[HttpException(
     statusCode: Response::HTTP_NOT_FOUND,
     message: 'Some message with static param = "{ static_param }", expression param = "{ expression_param }" and translated expression param = "{ translated_expression_param }"',
-    translationParameters: [
+    parameters: [
         '{ static_param }' => 'Static',
         '{ expression_param }' => new Expression('e.expressionParam()'),
         '{ translated_expression_param }' => new Expression('translator.trans(e.translatedExpressionParam())'),

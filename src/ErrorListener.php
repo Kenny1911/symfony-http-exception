@@ -57,7 +57,7 @@ final class ErrorListener implements EventSubscriberInterface
 
             $translator = new TranslatorDecorator($this->translator, $httpException->translationDomain);
 
-            $parameters = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->translationParameters);
+            $parameters = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->parameters);
             $message = $translator->trans($httpException->message ?? $throwable->getMessage(), $parameters, $httpException->translationDomain);
             $headers = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->headers);
 

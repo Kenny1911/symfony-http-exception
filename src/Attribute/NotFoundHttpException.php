@@ -14,15 +14,15 @@ use Symfony\Component\HttpFoundation\Response;
 final class NotFoundHttpException extends BaseHttpException
 {
     /**
-     * @param array<non-empty-string, non-empty-string|Expression> $translationParameters
+     * @param array<non-empty-string, non-empty-string|Expression> $parameters
      * @param array<non-empty-string, non-empty-string|Expression> $headers
      */
     public function __construct(
         ?string $message = null,
-        array $translationParameters = [],
+        array $parameters = [],
         string $translationDomain = 'http_message',
         array $headers = [],
     ) {
-        parent::__construct(Response::HTTP_NOT_FOUND, $message, $translationParameters, $translationDomain, $headers);
+        parent::__construct(Response::HTTP_NOT_FOUND, $message, $parameters, $translationDomain, $headers);
     }
 }
