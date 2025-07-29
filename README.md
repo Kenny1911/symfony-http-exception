@@ -35,6 +35,47 @@ services:
 
 > Arguments `$translator` and `$expressionLanguage` is not required
 
+As the third argument `$metadataLoader`, you can pass the instance of `Kenny1911\SymfonyHttpException\Metadata\MetadataLoader`.
+The default value is `AttributeMetadataLoader`. Apart from this, there is also:
+
+- `ArrayMetadataLoader` - use map exception class to `BaseHttpException` instance.
+- `ConfigMetadataLoader` - use associative array for describe configuration.
+- `ChainMetadataLoader` - combine multiply `MetadataLoader` instances.
+
+Эти загрузчики могут использоваться для описания сторонних классов исключения.
+
+Example of advanced configuration:
+
+```yaml
+# config/services.yaml
+services:
+    Kenny1911\SymfonyHttpException\ErrorListener:
+        arguments:
+          - '@translator'
+          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }
+          - !service
+            class: Kenny1911\SymfonyHttpException\Metadata\ChainMetadataLoader
+            arguments:
+              - !service { class: Kenny1911\SymfonyHttpException\Metadata\ArrayMetadataLoader }
+              - !service
+                class: Kenny1911\SymfonyHttpException\Metadata\ConfigMetadataLoader
+                arguments:
+                  - App\Exceptions\SomeException:
+                      statusCode: 401
+                      message: 'Not authorized. Error code: { error_code }. { exception_message }'
+                      parameters:
+                        '{ error_code }': '10420'
+                        '{ exception_message }': 'expr(e.getMessage())'
+                      translationDomain: message
+                      headers:
+                        'X-Error-Code': '10420'
+                        'X-Error-Message': 'expr(e.getMessage())'
+                    App\Exceptions\OtherException:
+                      statusCode: 400
+        tags:
+            - { name: kernel.event_subscriber }
+```
+
 ## Usage
 
 ### Basic Example
