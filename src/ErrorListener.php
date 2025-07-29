@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Kenny1911\SymfonyHttpException;
 
-use Kenny1911\SymfonyHttpException\Attribute\BaseHttpException;
 use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
+use Kenny1911\SymfonyHttpException\Metadata\AttributeMetadataLoader;
+use Kenny1911\SymfonyHttpException\Metadata\MetadataLoader;
 use Kenny1911\SymfonyHttpException\Translation\SimpleTranslator;
 use Kenny1911\SymfonyHttpException\Translation\TranslatorDecorator;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -23,6 +24,7 @@ final class ErrorListener implements EventSubscriberInterface
     public function __construct(
         private readonly TranslatorInterface $translator = new SimpleTranslator(),
         private readonly ?ExpressionLanguage $expressionLanguage = null,
+        private readonly MetadataLoader $metadataLoader = new AttributeMetadataLoader(),
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -43,34 +45,25 @@ final class ErrorListener implements EventSubscriberInterface
             return;
         }
 
-        $refClass = new \ReflectionClass($throwable::class);
+        $httpException = $this->metadataLoader->load($throwable::class);
 
-        do {
-            $attribute = $refClass->getAttributes(BaseHttpException::class, \ReflectionAttribute::IS_INSTANCEOF)[0] ?? null;
+        if (null === $httpException) {
+            return;
+        }
 
-            if (null === $attribute) {
-                continue;
-            }
+        $translator = new TranslatorDecorator($this->translator, $httpException->translationDomain);
 
-            /** @var BaseHttpException $httpException */
-            $httpException = $attribute->newInstance();
+        $parameters = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->parameters);
+        $message = $translator->trans($httpException->message ?? $throwable->getMessage(), $parameters, $httpException->translationDomain);
+        $headers = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->headers);
 
-            $translator = new TranslatorDecorator($this->translator, $httpException->translationDomain);
-
-            $parameters = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->parameters);
-            $message = $translator->trans($httpException->message ?? $throwable->getMessage(), $parameters, $httpException->translationDomain);
-            $headers = array_map(fn(string|Expression $p): string => $this->exec($p, $throwable, $translator), $httpException->headers);
-
-            $event->setThrowable(new HttpException(
-                statusCode: $httpException->statusCode,
-                message: $message,
-                previous: $throwable,
-                headers: $headers,
-                code: (int) $throwable->getCode(),
-            ));
-
-            break;
-        } while ($refClass = $refClass->getParentClass());
+        $event->setThrowable(new HttpException(
+            statusCode: $httpException->statusCode,
+            message: $message,
+            previous: $throwable,
+            headers: $headers,
+            code: (int) $throwable->getCode(),
+        ));
     }
 
     private function exec(string|Expression $expression, \Throwable $throwable, TranslatorInterface $translator): string

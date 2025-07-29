@@ -36,6 +36,48 @@ services:
 
 > Аргументы `$translator` и `$expressionLanguage` не обязательны
 
+В качестве третьего аргумента `$metadataLoader` можно передать инстанс
+`Kenny1911\SymfonyHttpException\Metadata\MetadataLoader`. По-умолчанию используется `AttributeMetadataLoader`. Помимо
+этого также есть:
+
+- `ArrayMetadataLoader` - использует сопоставление (map) класса исключения к объекту `BaseHttpException`.
+- `ConfigMetadataLoader` - использует ассоциативный массив для описания конфигурации.
+- `ChainMetadataLoader` - объединяет в себе несколько `MetadataLoader`. 
+
+This loaders can be used for describe third-party exceptions.
+
+Пример расширенной конфигурации:
+
+```yaml
+# config/services.yaml
+services:
+    Kenny1911\SymfonyHttpException\ErrorListener:
+        arguments:
+          - '@translator'
+          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }
+          - !service
+            class: Kenny1911\SymfonyHttpException\Metadata\ChainMetadataLoader
+            arguments:
+              - !service { class: Kenny1911\SymfonyHttpException\Metadata\ArrayMetadataLoader }
+              - !service
+                class: Kenny1911\SymfonyHttpException\Metadata\ConfigMetadataLoader
+                arguments:
+                  - App\Exceptions\SomeException:
+                      statusCode: 401
+                      message: 'Not authorized. Error code: { error_code }. { exception_message }'
+                      parameters:
+                        '{ error_code }': '10420'
+                        '{ exception_message }': 'expr(e.getMessage())'
+                      translationDomain: message
+                      headers:
+                        'X-Error-Code': '10420'
+                        'X-Error-Message': 'expr(e.getMessage())'
+                    App\Exceptions\OtherException:
+                      statusCode: 400
+        tags:
+            - { name: kernel.event_subscriber }
+```
+
 ## Использование
 
 ### Минимальный пример
@@ -101,6 +143,8 @@ use Kenny1911\SymfonyHttpException\Attribute\BadRequestHttpException;
 #[BadRequestHttpException]
 final class InvalidUsernameException extends Exception {}
 ```
+
+TODO Описать использование другие MetadataLoader: ArrayMetadataLoader, ConfigMetadataLoader и ChainMetadataLoader
 
 ## Лицензия
 
