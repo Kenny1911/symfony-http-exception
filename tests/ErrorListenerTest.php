@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace Kenny1911\SymfonyHttpException\Tests;
 
 use Kenny1911\SymfonyHttpException\ErrorListener;
+use Kenny1911\SymfonyHttpException\ExpressionLanguage\Expression;
+use Kenny1911\SymfonyHttpException\Metadata\ArrayMetadataLoader;
+use Kenny1911\SymfonyHttpException\Metadata\AttributeMetadataLoader;
+use Kenny1911\SymfonyHttpException\Metadata\ChainMetadataLoader;
+use Kenny1911\SymfonyHttpException\Metadata\ConfigMetadataLoader;
 use PHPUnit\Framework\Attributes\TestWith;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
@@ -108,6 +113,22 @@ final class ErrorListenerTest extends TestCase
         400,
         [],
     ])]
+    #[TestWith([
+        new TestExceptionFromArrayMetadataLoader('Orig message, using array'),
+        true,
+        true,
+        'Trans(test): Not authorized. Orig message, using array',
+        401,
+        ['X-Exception-Message' => 'Orig message, using array'],
+    ])]
+    #[TestWith([
+        new TestExceptionFromConfigMetadataLoader('Orig message, using array'),
+        true,
+        true,
+        'Trans(test): Not authorized. Orig message, using array',
+        401,
+        ['X-Exception-Message' => 'Orig message, using array'],
+    ])]
     public function test(
         \Throwable $throwable,
         bool $supportTranslation,
@@ -125,6 +146,27 @@ final class ErrorListenerTest extends TestCase
         $listener = new ErrorListener(
             translator: $supportTranslation ? self::createTranslator() : $defaultTranslator,
             expressionLanguage: $supportExpressionLanguage ? new ExpressionLanguage() : null,
+            metadataLoader: new ChainMetadataLoader([
+                new AttributeMetadataLoader(),
+                new ArrayMetadataLoader([
+                    TestExceptionFromArrayMetadataLoader::class => new \Kenny1911\SymfonyHttpException\Attribute\HttpException(
+                        statusCode: 401,
+                        message: 'Not authorized. { exception_message }',
+                        parameters: ['{ exception_message }' => new Expression('e.getMessage()')],
+                        translationDomain: 'test',
+                        headers: ['X-Exception-Message' => new Expression('e.getMessage()')],
+                    ),
+                ]),
+                new ConfigMetadataLoader([
+                    TestExceptionFromConfigMetadataLoader::class => [
+                        'statusCode' => 401,
+                        'message' => 'Not authorized. { exception_message }',
+                        'parameters' => ['{ exception_message }' => 'expr(e.getMessage())'],
+                        'translationDomain' => 'test',
+                        'headers' => ['X-Exception-Message' => 'expr(e.getMessage())'],
+                    ],
+                ]),
+            ]),
         );
 
         $event = (new \ReflectionClass(ExceptionEvent::class))->newInstanceWithoutConstructor();
