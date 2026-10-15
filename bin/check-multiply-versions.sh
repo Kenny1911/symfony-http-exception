@@ -3,7 +3,7 @@
 WORKING_DIR="$(dirname $(dirname $(realpath $0)))"
 cd "${WORKING_DIR}"
 
-for symfony_version in '^5.4' '^6.0' '^7.0'; do
+for symfony_version in '^6.4' '^7.4' '8.0.*' '8.1.*'; do
   composer install &&
   composer update --with-all-dependencies \
     --with "symfony/event-dispatcher:${symfony_version}" \
