@@ -10,7 +10,19 @@ use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
- * @api
+ * @internal
+ * @psalm-internal Kenny1911\SymfonyHttpException\DependencyInjection
+ *
+ * @psalm-type Config = array{
+ *     enable_attributes: bool,
+ *     exceptions: array<class-string<\Throwable>, array{
+ *         statusCode: int<400, 599>,
+ *         message?: string,
+ *         parameters?: array<non-empty-string, non-empty-string>,
+ *         translationDomain?: string,
+ *         headers?: array<non-empty-string, non-empty-string>
+ *     }>
+ * }
  */
 final class Configuration implements ConfigurationInterface
 {

@@ -10,17 +10,18 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
 /**
- * @api
+ * @internal
+ * @psalm-internal Kenny1911\SymfonyHttpException\DependencyInjection
+ *
+ * @psalm-import-type Config from Configuration
  */
 final class SymfonyHttpExceptionExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();
+        /** @var Config $config */
         $config = $this->processConfiguration($configuration, $configs);
-
-        assert(is_bool($config['enable_attributes']));
-        assert(is_array($config['exceptions']));
 
         $loader = new PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'));
         $loader->load('services.php');
