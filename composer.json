@@ -15,7 +15,7 @@
         "sort-packages": true
     },
     "scripts": {
-        "psalm": "./tools/psalm/vendor/bin/psalm",
+        "psalm": "./tools/psalm/vendor/bin/psalm --no-cache",
         "phpunit": "phpunit",
         "cs-fix": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix",
         "cs-check": "./tools/php-cs-fixer/vendor/bin/php-cs-fixer check",
@@ -24,7 +24,7 @@
         "checks": [
             "@cs-check",
             "@phpunit",
-            "@psalm --no-cache",
+            "@psalm",
             "@composer-require-checker",
             "@composer-unused"
         ]
