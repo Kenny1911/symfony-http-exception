@@ -4,14 +4,12 @@ declare(strict_types=1);
 
 namespace Kenny1911\SymfonyHttpException\DependencyInjection;
 
-use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
-use Symfony\Component\Config\Definition\Builder\NodeBuilder;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 /**
  * @internal
- * @psalm-internal Kenny1911\SymfonyHttpException\DependencyInjection
+ * @psalm-internal Kenny1911\SymfonyHttpException
  *
  * @psalm-type Config = array{
  *     enable_attributes: bool,
@@ -49,7 +47,6 @@ final class Configuration implements ConfigurationInterface
                                 ->min(400)
                                 ->max(599)
                                 ->isRequired()
-                                ->cannotBeEmpty()
                                 ->end()
                             ->scalarNode('message')
                                 ->defaultNull()
