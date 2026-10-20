@@ -17,6 +17,11 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
  */
 final class SymfonyHttpExceptionExtension extends Extension
 {
+    public function getAlias(): string
+    {
+        return 'kenny1911_symfony_http_exception';
+    }
+
     public function load(array $configs, ContainerBuilder $container): void
     {
         $configuration = new Configuration();

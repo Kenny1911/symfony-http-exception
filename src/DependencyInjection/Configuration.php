@@ -29,7 +29,7 @@ final class Configuration implements ConfigurationInterface
      */
     public function getConfigTreeBuilder(): TreeBuilder
     {
-        $treeBuilder = new TreeBuilder('symfony_http_exception');
+        $treeBuilder = new TreeBuilder('kenny1911_symfony_http_exception');
 
         $rootNode = $treeBuilder->getRootNode();
 

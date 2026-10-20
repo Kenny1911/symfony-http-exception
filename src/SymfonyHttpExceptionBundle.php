@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 namespace Kenny1911\SymfonyHttpException;
 
-use Symfony\Component\HttpKernel\Bundle\AbstractBundle;
+use Kenny1911\SymfonyHttpException\DependencyInjection\SymfonyHttpExceptionExtension;
+use Symfony\Component\DependencyInjection\Extension\ExtensionInterface;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 /**
  * @api
  */
-final class SymfonyHttpExceptionBundle extends AbstractBundle {}
+final class SymfonyHttpExceptionBundle extends Bundle
+{
+    public function getContainerExtension(): ?ExtensionInterface
+    {
+        return $this->extension ??= new SymfonyHttpExceptionExtension();
+    }
+}
