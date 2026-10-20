@@ -1,46 +1,50 @@
 # AGENTS.md
 
-## Project: kenny1911/symfony-http-exception -> Symfony Bundle
+## Project
+`kenny1911/symfony-http-exception` is a Symfony Bundle (`"type": "symfony-bundle"`) that converts PHP exceptions into `Symfony\Component\HttpKernel\Exception\HttpException` via attributes and config.
+- PHP `^8.1`; Symfony `^6.4 || ^7.4 || ^8.0`.
+- `symfony/translation` and `symfony/expression-language` are optional (`suggest`), never hard requirements.
+- Public API (`ErrorListener`, attributes, `MetadataLoader`s, `Expression`) is marked `@api` — do not break BC.
 
-This repo currently provides an attribute-based way to convert PHP exceptions to Symfony HttpExceptions via an `ErrorListener`. The goal: turn this into a proper Symfony Bundle (6.4/7.4/8+) that registers the listener automatically, supports attributes + config-based mappings, and keeps backward compatibility where possible.
+## Architecture
+- Bundle: `src/SymfonyHttpExceptionBundle.php` extends `Symfony\Component\HttpKernel\Bundle\Bundle`; overrides `getContainerExtension()` to return `SymfonyHttpExceptionExtension`.
+- DI: `src/DependencyInjection/Configuration.php` + `SymfonyHttpExceptionExtension.php` (both `@internal`, `@psalm-internal Kenny1911\SymfonyHttpException`).
+- **Extension alias = config root key = `kenny1911_symfony_http_exception`** (not `symfony_http_exception`).
+- Container parameters: `kenny1911.symfony_http_exception.enable_attributes`, `kenny1911.symfony_http_exception.exceptions`.
+- Config: `enable_attributes` (bool, default `true`); `exceptions` — key = exception FQCN, values: `statusCode` (required, 400–599), `message?`, `parameters?`, `translationDomain?` (default `http_message`), `headers?`.
+- DI resources: `config/services.php` **at package root** (not `src/Resources/config`). File namespace is `Kenny1911\SymfonyHttpException`; import DSL functions via `use function Symfony\Component\DependencyInjection\Loader\Configurator\...`.
+- `config/services.php` reads params through its second argument `ContainerBuilder $builder`; the Extension must set parameters **before** `$loader->load('services.php')`.
+- Loaders: `AttributeMetadataLoader` (if `enable_attributes`), `ConfigMetadataLoader` (if `exceptions` non-empty) → `ChainMetadataLoader` (always).
+- `ErrorListener` is tagged `kernel.event_subscriber` with args `[translator, expressionLanguage|null, metadataLoader]`.
+- translator: `service('translator')` if present, otherwise `inline_service(SimpleTranslator::class)` — **not `null`** (the argument is non-nullable).
+- ExpressionLanguage: dedicated service `kenny1911.symfony_http_exception.expression_language`, registered only if `class_exists()`; never reuse global `symfony.expression_language`.
 
-## Goals
-- Create a Symfony Bundle that auto-registers `ErrorListener` as `kernel.event_subscriber`
-- Add bundle configuration (`symfony_http_exception.exceptions`) mirroring `ConfigMetadataLoader` structure 1:1
-- Support **attributes + config together** via `ChainMetadataLoader`. ConfigLoader is enabled **only if `exceptions` is non-empty`. Attributes are always enabled.
-- Handle optional dependencies dynamically: `symfony/translation` and `symfony/expression-language`. If missing — pass `null`. Create a **separate bundle service** for ExpressionLanguage (do not reuse a global one). Register it only if the class exists.
-- Use PHP DI config: `src/Resources/config/services.php` (not YAML)
-- Update README-RU.md first, then README.md
-- Add minimal tests for `Configuration` (and optionally minimal for `Extension` if justified). Don't overdo bundle kernel tests.
-- Keep all existing public classes/attributes/MetadataLoaders/ErrorListener/Expression API unchanged.
-- Add `suggest` for translation/expression-language in `composer.json` and align Symfony constraints to `^6.4 || ^7.4 || ^8.0`
+## Commands
+- Install: `composer install` (`vendor/` and `composer.lock` are gitignored).
+- Tests: `vendor/bin/phpunit` (`phpunit.dist.xml`). Single test: `vendor/bin/phpunit --filter testName tests/DependencyInjection/ConfigurationTest.php`.
+- All checks: `composer run checks` (cs-check → phpunit → psalm --no-cache → composer-require-checker → composer-unused).
+- Psalm: `./tools/psalm/vendor/bin/psalm` (or `composer run psalm`).
+- CS-Fixer: `./tools/php-cs-fixer/vendor/bin/php-cs-fixer fix` (`cs-fix`) / `check` (`cs-check`).
+- Symfony version matrix: `bin/check-multiply-versions.sh` (`^6.4`, `^7.4`, `8.0.*`, `8.1.*`; translation-contracts `^2.3`/`^3.0`).
+- Tooling lives in `./tools/<name>/` with its own `composer.json` — this is **not** the root `vendor/bin`.
 
-## Architecture notes
-- Bundle class: `Kenny1911\SymfonyHttpException\SymfonyHttpExceptionBundle` extends `Symfony\Component\HttpKernel\Bundle\AbstractBundle`
-- DI: `DependencyInjection\Configuration` + `DependencyInjection\SymfonyHttpExceptionExtension`
-- Config key: `symfony_http_exception`
-- `exceptions` structure (1:1 with `ConfigMetadataLoader`): keys are FQCN exception classes; values may include `statusCode`, `message`, `parameters`, `translationDomain`, `headers`
-- Metadata loading: always include `AttributeMetadataLoader`; if `exceptions` non-empty include `ConfigMetadataLoader` -> combine into `ChainMetadataLoader`
-- `ErrorListener` registered by bundle with tag `kernel.event_subscriber`. Arguments: `[translator_or_null, bundle_expression_language_or_null, metadata_loader]`
-- Translator: use `translator` service only if `$container->has('translator')`
-- ExpressionLanguage: create internal service (e.g. `kenny1911.symfony_http_exception.expression_language`) only if `Symfony\Component\ExpressionLanguage\ExpressionLanguage` exists; do not reference global `symfony.expression_language`
+## Tests
+- `tests/`, PSR-4 `Kenny1911\SymfonyHttpException\Tests\`; test classes are marked `@internal`.
+- Assert the **whole resulting array with a single `assertSame`**, not a pile of `self::assert*`.
+- Extract `processConfiguration` into a private helper (see `ConfigurationTest::process()`).
+- For config, use the full array or `@psalm-import-type Config from Configuration`.
+- Reference: `tests/ErrorListenerTest.php`, `tests/DependencyInjection/ConfigurationTest.php`.
 
-## Plan (track progress)
-See the full detailed plan in the conversation / TODO. Key files:
-- `src/SymfonyHttpExceptionBundle.php`
-- `src/DependencyInjection/Configuration.php`
-- `src/DependencyInjection/SymfonyHttpExceptionExtension.php`
-- `src/Resources/config/services.php`
-- `composer.json` (suggest + constraints)
-- `README-RU.md`, `README.md`
-- `tests/DependencyInjection/ConfigurationTest.php` (minimal)
+## Gotchas
+- Psalm: `errorLevel="1"`, analyses only `src` and `tests` — **`config/` is not covered**; check `config/services.php` manually (`psalm config/services.php`).
+- Psalm forbids: `dd`, `die`, `dump`, `echo`, `empty`, `eval`, `exit`, `print`, `print_r`, `var_export`.
+- CS-Fixer: `PHPyh\CodingStandard\PhpCsFixerCodingStandard`, `yoda_style=true`, `ClassVisibilityFixer` (default `api`); Finder covers only `src` and `tests`, so **`config/` is not linted**.
+- `->cannotBeEmpty()` is invalid on `integerNode` (`NumericNodeDefinition`) — use `min()`/`max()`/`isRequired()`.
+- `@psalm-suppress` exists only for the Symfony Config DSL (`Configuration`) and `MixedReturnStatement` in the Bundle; prefer `assert()` for new code.
+- CI (`.github/workflows/checks.yml`): PHP 8.4, installs tools in `./tools/`, then runs `bin/check-multiply-versions.sh`.
+- `config/` is runtime DI config — keep it out of `.gitattributes export-ignore`.
 
-## Commands (project)
-- PHPUnit: `vendor/bin/phpunit` (config `phpunit.dist.xml`)
-- Psalm: `vendor/bin/psalm` (`psalm.xml`)
-- PHP-CS-Fixer: `vendor/bin/php-cs-fixer fix --dry-run` (`.php-cs-fixer.dist.php`)
-
-## Notes
-- Keep BC: manual registration of `ErrorListener` in user config must still be possible conceptually; bundle just adds its own service.
-- ConfigLoader enabled only when `exceptions` non-empty. No `enable_attribute_loader` / `enable_config_loader` flags.
-- Use PHP DI resources, not YAML.
+## Remaining work
+- Update `README-RU.md`, then `README.md`: register the bundle instead of manual `services.yaml`.
+- Optional: `tests/DependencyInjection/ExtensionTest.php`.
+- Optional: add `config/` to `psalm.xml` and `.php-cs-fixer.dist.php`.
