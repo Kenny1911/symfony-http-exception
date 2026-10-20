@@ -2,15 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Symfony\Component\DependencyInjection\Loader\Configurator;
+namespace Kenny1911\SymfonyHttpException;
 
-use Kenny1911\SymfonyHttpException\ErrorListener;
 use Kenny1911\SymfonyHttpException\Metadata\AttributeMetadataLoader;
 use Kenny1911\SymfonyHttpException\Metadata\ChainMetadataLoader;
 use Kenny1911\SymfonyHttpException\Metadata\ConfigMetadataLoader;
 use Kenny1911\SymfonyHttpException\Translation\SimpleTranslator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
     $services = $container->services();
