@@ -7,7 +7,8 @@ HTTP-исключения Symfony с поддержкой кодов состо�
 
 ## Основные возможности
 
-- Преобразование любых исключений в `HttpException` через атрибуты
+- Преобразование любых исключений в `HttpException` через атрибуты или конфигурацию
+- Автоматическая регистрация как Symfony-бандла
 - Поддержка HTTP-кодов, сообщений, заголовков и параметров перевода
 - Встроенные алиасы для распространённых HTTP-ошибок
 - Поддержка системы перевода Symfony
@@ -21,62 +22,51 @@ HTTP-исключения Symfony с поддержкой кодов состо�
 composer require kenny1911/symfony-http-exception
 ```
 
-Для работы библиотеки необходимо зарегистрировать подписчик событий:
+Зарегистрируйте бандл в `config/bundles.php`:
 
-```yaml
-# config/services.yaml
-services:
-    Kenny1911\SymfonyHttpException\ErrorListener:
-        arguments:
-          - '@translator'
-          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }
-        tags:
-            - { name: kernel.event_subscriber }
+```php
+return [
+    // ...
+    Kenny1911\SymfonyHttpException\SymfonyHttpExceptionBundle::class => ['all' => true],
+];
 ```
 
-> Аргументы `$translator` и `$expressionLanguage` не обязательны
-
-В качестве третьего аргумента `$metadataLoader` можно передать инстанс
-`Kenny1911\SymfonyHttpException\Metadata\MetadataLoader`. По-умолчанию используется `AttributeMetadataLoader`. Помимо
-этого также есть:
-
-- `ArrayMetadataLoader` - использует сопоставление (map) класса исключения к объекту `BaseHttpException`.
-- `ConfigMetadataLoader` - использует ассоциативный массив для описания конфигурации.
-- `ChainMetadataLoader` - объединяет в себе несколько `MetadataLoader`. 
-
-This loaders can be used for describe third-party exceptions.
-
-Пример расширенной конфигурации:
+Настройте бандл в `config/packages/kenny1911_symfony_http_exception.yaml`:
 
 ```yaml
-# config/services.yaml
-services:
-    Kenny1911\SymfonyHttpException\ErrorListener:
-        arguments:
-          - '@translator'
-          - !service { class: Symfony\Component\ExpressionLanguage\ExpressionLanguage }
-          - !service
-            class: Kenny1911\SymfonyHttpException\Metadata\ChainMetadataLoader
-            arguments:
-              - !service { class: Kenny1911\SymfonyHttpException\Metadata\ArrayMetadataLoader }
-              - !service
-                class: Kenny1911\SymfonyHttpException\Metadata\ConfigMetadataLoader
-                arguments:
-                  - App\Exceptions\SomeException:
-                      statusCode: 401
-                      message: 'Not authorized. Error code: { error_code }. { exception_message }'
-                      parameters:
-                        '{ error_code }': '10420'
-                        '{ exception_message }': 'expr(e.getMessage())'
-                      translationDomain: message
-                      headers:
-                        'X-Error-Code': '10420'
-                        'X-Error-Message': 'expr(e.getMessage())'
-                    App\Exceptions\OtherException:
-                      statusCode: 400
-        tags:
-            - { name: kernel.event_subscriber }
+kenny1911_symfony_http_exception:
+    enable_attributes: true # значение по умолчанию
+
+    exceptions:
+        App\Exceptions\SomeException:
+            statusCode: 401
+            message: 'Not authorized. Error code: { error_code }. { exception_message }'
+            parameters:
+                '{ error_code }': '10420'
+                '{ exception_message }': 'expr(e.getMessage())'
+            translationDomain: message
+            headers:
+                'X-Error-Code': '10420'
+                'X-Error-Message': 'expr(e.getMessage())'
+
+        App\Exceptions\OtherException:
+            statusCode: 400
 ```
+
+Опции:
+
+- `enable_attributes` — включает загрузку метаданных из атрибутов (по умолчанию `true`).
+- `exceptions` — сопоставление FQCN исключения с метаданными HTTP-исключения:
+  - `statusCode` — обязательный, `400`–`599`;
+  - `message` — по умолчанию используется сообщение исключения;
+  - `parameters` — параметры-плейсхолдеры для `message`;
+  - `translationDomain` — по умолчанию `http_message`;
+  - `headers` — заголовки ответа.
+
+Значения в обёртке `expr(...)` вычисляются через ExpressionLanguage (`e` — исключение, `translator` — транслятор); для
+этого требуется `symfony/expression-language`.
+
+Метаданные из конфигурации имеют приоритет над атрибутами для одного и того же класса исключения.
 
 ## Использование
 
@@ -143,8 +133,6 @@ use Kenny1911\SymfonyHttpException\Attribute\BadRequestHttpException;
 #[BadRequestHttpException]
 final class InvalidUsernameException extends Exception {}
 ```
-
-TODO Описать использование другие MetadataLoader: ArrayMetadataLoader, ConfigMetadataLoader и ChainMetadataLoader
 
 ## Лицензия
 
