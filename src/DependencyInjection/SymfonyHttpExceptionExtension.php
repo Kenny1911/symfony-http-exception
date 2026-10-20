@@ -11,7 +11,7 @@ use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 
 /**
  * @internal
- * @psalm-internal Kenny1911\SymfonyHttpException\DependencyInjection
+ * @psalm-internal Kenny1911\SymfonyHttpException
  *
  * @psalm-import-type Config from Configuration
  */

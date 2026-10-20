@@ -15,6 +15,7 @@ final class SymfonyHttpExceptionBundle extends Bundle
 {
     public function getContainerExtension(): ?ExtensionInterface
     {
+        /** @psalm-suppress MixedReturnStatement */
         return $this->extension ??= new SymfonyHttpExceptionExtension();
     }
 }
