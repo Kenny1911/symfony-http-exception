@@ -15,25 +15,26 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 use function Symfony\Component\DependencyInjection\Loader\Configurator\inline_service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\param;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 return static function (ContainerConfigurator $container, ContainerBuilder $builder): void {
     $services = $container->services();
 
-    $loaders = [];
-
     if (true === $builder->getParameter('kenny1911.symfony_http_exception.enable_attributes')) {
-        $services->set(AttributeMetadataLoader::class);
-        $loaders[] = service(AttributeMetadataLoader::class);
+        $services->set(AttributeMetadataLoader::class)
+            ->tag('kenny1911.symfony_http_exception.loader', ['priority' => 0]);
     }
 
     if ([] !== $builder->getParameter('kenny1911.symfony_http_exception.exceptions')) {
         $services->set(ConfigMetadataLoader::class)
-            ->args([param('kenny1911.symfony_http_exception.exceptions')]);
-        $loaders[] = service(ConfigMetadataLoader::class);
+            ->args([param('kenny1911.symfony_http_exception.exceptions')])
+            ->tag('kenny1911.symfony_http_exception.loader', ['priority' => 10]);
     }
 
     $services->set(ChainMetadataLoader::class)
-        ->args([$loaders]);
+        ->args([
+            tagged_iterator('kenny1911.symfony_http_exception.loader'),
+        ]);
 
     if (class_exists(ExpressionLanguage::class)) {
         $services->set('kenny1911.symfony_http_exception.expression_language', ExpressionLanguage::class);
